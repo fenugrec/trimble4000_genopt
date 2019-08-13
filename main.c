@@ -36,7 +36,7 @@ u8 pwd_bitcount(u8 *ppass, u8 len)  {
 		//count # of bits set ?
 		u8 d2, tmp;
 		for (d2=3; d2; d2--) {
-			tmp = ppass[len];
+			tmp = ppass[len-1];
 			tmp = (tmp >> d2) & 1;
 			out += tmp;
 		}
@@ -65,8 +65,13 @@ void decode_loop(u8 *out, u8 *ppass, u32 serno) {
 	u8 dcnt ;
 
 	//un-ascii
-	for (cnt = 0; cnt < 9; cnt++) {
+	for (cnt = 0; cnt < 10; cnt++) {
 		ppass[cnt] = hexdig(ppass[cnt]);
+	}
+
+	u8 par = pwd_bitcount(ppass, 9) ;	//parity after unascii
+	if (par != ppass[9]) {
+		printf("bad par!\n");
 	}
 
 	for (cnt = 0, dcnt = 8; cnt < 9; cnt++, dcnt--) {
@@ -80,26 +85,38 @@ void decode_loop(u8 *out, u8 *ppass, u32 serno) {
 	}
 }
 
-void encode(u8 *out, u32 serno, u8 optnum, u8 newval) {
-
-	u8 optstring[11];
-	sprintf(optstring, "%05d%02d%02x", serno, optnum, newval);
-
+void encode_raw(u8 *out, u8 *optstring) {
 	u8 cnt = 0;
 	u8 dcnt = 8;
+	u32 serno = 0;
+
+	sscanf(optstring, "%5d", &serno);
+
+	
 	for (; cnt < 9; cnt++, dcnt--) {
 		u8 tmp;
 		//printf("enc: %02X->", optstring[dcnt]);
 		tmp = hexdig(optstring[dcnt]); //start from the end
 		tmp = mangle_38d78(tmp);
 		out[cnt] = tmp ^ (serno & 0x0F) ^ key[cnt];
-		out[cnt] = hexdig2asc(out[cnt]);	//conv back to asc
 		//printf("%02X\n", out[cnt]);
 	}
 
-	u8 par = pwd_bitcount(out, 9) ;
-	out[9] = hexdig2asc(par);
+	out[9] = pwd_bitcount(out, 9);	//parity
+	//printf("enc par=%x\n", out[9]);
+
+	for (cnt = 0; cnt < 10; cnt++) {
+		out[cnt] = hexdig2asc(out[cnt]);
+	}
+
 	return;
+}
+
+void encode(u8 *out, u32 serno, u8 optnum, u8 newval) {
+
+	u8 optstring[11];
+	sprintf(optstring, "%05d%02d%02x", serno, optnum, newval);
+	encode_raw(out, optstring);
 }
 
 //round-trip test varying SN
@@ -167,7 +184,29 @@ void testshit(void) {
 }
 
 
+void usage(void) {
+	printf("usage: genopt XXXXXYYZZ, where\n"
+			"\t XXXXX=serial #, decimal\n"
+			"\t YY=opt #, decimal\n"
+			"\t ZZ=new value, hex\n\te.g. 2029904FF (sn 20299, option 04, newval=0xFF)\n");
+}
+	
 int main(int argc, char **argv) {
+	u8 out[11];
 	testshit();
+
+	if (argc != 2) {
+		usage();
+		return -1;
+	}
+
+	if (strlen(argv[1]) != 9) {
+		printf("bad len\n");
+		usage();
+		return -1;
+	}
+
+	encode_raw(out, argv[1]);
+	printf("pass: %.10s\n", out);
 	return 0;
 }
