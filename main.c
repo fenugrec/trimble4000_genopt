@@ -19,7 +19,7 @@ u8 mangle_38d78(u8 val) {
 
 	for (; cnt < 4; cnt++) {
 		mask <<= 1;
-		if ( !((val >> cnt) & 1)) {
+		if ( ((val >> cnt) & 1)) {
 			mask ^= 1;
 		}
 	}
@@ -35,9 +35,9 @@ u8 pwd_bitcount(u8 *ppass, u8 len)  {
 		// ppass[len] is within 00-0F.
 		//count # of bits set ?
 		u8 d2, tmp;
-		for (d2=3; d2; d2--) {
+		for (d2=4; d2; d2--) {
 			tmp = ppass[len-1];
-			tmp = (tmp >> d2) & 1;
+			tmp = (tmp >> (d2-1)) & 1;
 			out += tmp;
 		}
 	}
