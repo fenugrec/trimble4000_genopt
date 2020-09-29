@@ -1,3 +1,14 @@
+/** (c) fenugrec 2019
+ * Licensed under GPLv3
+ *
+ * Option password generator for front-panel activation of options, for Trimble 4000 series GPS receivers.
+ *
+ * Tested only on one unit, "works for me"
+ *
+ * see https://rplstoday.com/community/surveying-geomatics/help-please-trimble-4000ssi-configuration/paged/4/#post-503658
+ *
+ */
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
